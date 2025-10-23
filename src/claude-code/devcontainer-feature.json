@@ -1,0 +1,20 @@
+{
+  "name": "Claude Code",
+  "id": "claude-code",
+  "version": "1.0.0",
+  "description": "Installs Claude Code CLI using native binary installation",
+  "customizations": {
+    "vscode": {
+      "extensions": ["anthropic.claude-code"]
+    }
+  },
+  "options": {
+    "version": {
+      "type": "string",
+      "proposals": ["stable", "latest"],
+      "default": "stable",
+      "description": "Select the version to install. Use 'stable' for the stable release, 'latest' for the most recent version, or specify a version number (e.g., '1.0.58')."
+    }
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}
