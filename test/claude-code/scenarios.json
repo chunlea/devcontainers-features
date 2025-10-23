@@ -1,0 +1,18 @@
+{
+    "stable": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "stable"
+            }
+        }
+    },
+    "latest": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code": {
+                "version": "latest"
+            }
+        }
+    }
+}
