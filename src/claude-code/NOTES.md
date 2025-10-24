@@ -19,11 +19,42 @@ This feature installs:
 }
 ```
 
-## Version Options
+## Configuration Options
+
+### Version
 
 - `stable` (default): Installs the stable release of Claude Code
 - `latest`: Installs the most recent version of Claude Code
 - Specific version number (e.g., `1.0.58`): Installs that specific version
+
+### Feature Options
+
+```jsonc
+{
+    "features": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
+            "version": "stable",           // Version to install (stable/latest/1.0.58)
+            "useOAuthToken": true,         // Skip onboarding, use OAuth (default: true)
+            "autoUpdates": true,           // Enable automatic updates (default: true)
+            "useSandbox": true            // Install sandbox support (default: true)
+        }
+    }
+}
+```
+
+**`useOAuthToken`** (default: `true`)
+- When enabled, sets `hasCompletedOnboarding: true` in `~/.claude.json`
+- Skips the initial onboarding flow and uses OAuth authentication
+- Recommended for devcontainers to streamline setup
+
+**`autoUpdates`** (default: `true`)
+- Controls whether Claude Code automatically updates to newer versions
+- Writes to `~/.claude.json` configuration
+
+**`useSandbox`** (default: `true`)
+- Installs `bubblewrap` for bash command sandboxing on Linux
+- Required for secure execution of bash commands in isolated environments
+- Includes installation of `git` and `ripgrep` dependencies
 
 ## Authentication
 
@@ -164,7 +195,10 @@ Add this to your `.gitignore`:
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
         "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "stable"
+            "version": "stable",
+            "useOAuthToken": true,    // Skip onboarding
+            "autoUpdates": true,      // Enable auto-updates
+            "useSandbox": true        // Install sandbox support
         }
     },
     "mounts": [
@@ -182,7 +216,10 @@ Add this to your `.gitignore`:
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
         "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "latest"
+            "version": "latest",
+            "useOAuthToken": true,
+            "autoUpdates": true,
+            "useSandbox": true
         }
     },
     "mounts": [
@@ -210,7 +247,10 @@ Create `.claude/settings.json` in your project:
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
         "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "stable"
+            "version": "stable",
+            "useOAuthToken": true,
+            "autoUpdates": false,     // Disable auto-updates for CI consistency
+            "useSandbox": true
         }
     },
     "remoteEnv": {
