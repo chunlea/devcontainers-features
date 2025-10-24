@@ -13,7 +13,7 @@
       "type": "string",
       "proposals": ["stable", "latest"],
       "default": "stable",
-      "description": "Select the version to install. Use 'stable' for the stable release, 'latest' for the most recent version, or specify a version number (e.g., '1.0.58')."
+      "description": "Select the version to install. Use 'stable' for the stable release, 'latest' for the most recent version, or specify a version number (e.g., '2.0.25')."
     },
     "useOAuthToken": {
       "type": "boolean",

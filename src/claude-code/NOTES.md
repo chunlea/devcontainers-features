@@ -19,21 +19,21 @@ This feature installs:
 }
 ```
 
-## Configuration Options
+## Configuration options
 
 ### Version
 
 - `stable` (default): Installs the stable release of Claude Code
 - `latest`: Installs the most recent version of Claude Code
-- Specific version number (e.g., `1.0.58`): Installs that specific version
+- Specific version number (e.g., `2.0.25`): Installs that specific version
 
-### Feature Options
+### Feature options
 
 ```jsonc
 {
     "features": {
         "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "stable",           // Version to install (stable/latest/1.0.58)
+            "version": "stable",           // Version to install (stable/latest/2.0.25)
             "useOAuthToken": true,         // Skip onboarding, use OAuth (default: true)
             "autoUpdates": true,           // Enable automatic updates (default: true)
             "useSandbox": true            // Install sandbox support (default: true)
@@ -58,84 +58,51 @@ This feature installs:
 
 ## Authentication
 
-⚠️ **Important**: This feature installs Claude Code but does NOT handle authentication. You must configure authentication separately.
+With `useOAuthToken: true` (default), Claude Code will skip the onboarding flow. You have two authentication options:
 
-### Authentication Methods
+### Option 1: OAuth token environment variable (recommended)
 
-Claude Code supports three authentication methods:
-
-#### 1. Docker Volume Mount (Recommended for Dev Containers)
-
-This is Anthropic's official pattern. Use a Docker volume to persist credentials across container rebuilds:
+Use an OAuth token via environment variable:
 
 ```jsonc
 {
     "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {}
-    },
-    "mounts": [
-        "source=claude-credentials,target=/home/vscode/.claude,type=volume"
-    ]
-}
-```
-
-**First-time setup**: Run `claude` inside the container to authenticate. Credentials persist in the volume.
-
-**Pros**: Isolated, persists across rebuilds, secure
-**Cons**: Requires initial authentication inside container
-
-#### 2. Host Directory Bind Mount (Local Development)
-
-Mount your host's `.claude` directory to share credentials:
-
-```jsonc
-{
-    "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {}
-    },
-    "mounts": [
-        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
-    ]
-}
-```
-
-**Pros**: Shares credentials with host, no re-authentication
-**Cons**: Host credentials accessible in container
-
-#### 3. Environment Variable (CI/CD & Teams)
-
-Use an API key via environment variable:
-
-```jsonc
-{
-    "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {}
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
+            "useOAuthToken": true
+        }
     },
     "containerEnv": {
-        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+        "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}"
     }
 }
 ```
 
-Or use remoteEnv for Codespaces:
+**Getting your token**: Run this command on your host machine to get your OAuth token:
 
-```jsonc
-{
-    "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {}
-    },
-    "remoteEnv": {
-        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
-    }
-}
+```bash
+claude setup-token
 ```
 
-**Pros**: Works for CI/CD, shareable with team
-**Cons**: Requires API key management
+This will display your token that you can set as the `CLAUDE_CODE_OAUTH_TOKEN` environment variable.
+
+**Switching accounts**: If you need to use a different account, use the `/logout` command in Claude Code, then run `claude setup-token` again to get a new token.
+
+### Option 2: Direct login
+
+You can authenticate in two ways:
+
+1. **During onboarding**: Run `claude` in your container and authenticate through the OAuth flow
+2. **Using `/login` command**: Type `/login` in Claude Code to authenticate
+
+```bash
+claude
+```
+
+This will open a browser for authentication. Your credentials will be saved in the container.
 
 ## Configuration
 
-### Project-Level Settings
+### Project-level settings
 
 Create `.claude/settings.json` in your project root for team-shared configuration:
 
@@ -185,9 +152,31 @@ Add this to your `.gitignore`:
 .claude/settings.local.json
 ```
 
-## Complete Examples
+## Complete examples
 
-### Example 1: Local Development with Host Credentials
+### Example 1: Using OAuth token environment variable
+
+```jsonc
+{
+    "name": "Team Project",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
+            "version": "stable",
+            "useOAuthToken": true,
+            "autoUpdates": true,
+            "useSandbox": true
+        }
+    },
+    "containerEnv": {
+        "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}"
+    }
+}
+```
+
+Run `claude setup-token` on your host to get the token, then set `CLAUDE_CODE_OAUTH_TOKEN` in your environment variables.
+
+### Example 2: Basic setup with direct login
 
 ```jsonc
 {
@@ -196,117 +185,57 @@ Add this to your `.gitignore`:
     "features": {
         "ghcr.io/<owner>/<repo>/claude-code:1": {
             "version": "stable",
-            "useOAuthToken": true,    // Skip onboarding
-            "autoUpdates": true,      // Enable auto-updates
-            "useSandbox": true        // Install sandbox support
-        }
-    },
-    "mounts": [
-        // Share host's Claude credentials
-        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
-    ]
-}
-```
-
-### Example 2: Team Development with Docker Volume
-
-```jsonc
-{
-    "name": "Team Project",
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "latest",
             "useOAuthToken": true,
             "autoUpdates": true,
             "useSandbox": true
         }
-    },
-    "mounts": [
-        // Persistent credentials in Docker volume
-        "source=claude-credentials-${devcontainerId},target=/home/vscode/.claude,type=volume"
-    ]
-}
-```
-
-Create `.claude/settings.json` in your project:
-```json
-{
-  "model": "claude-sonnet-4-5",
-  "permissions": {
-    "allowedTools": ["Read", "Write", "Edit", "Bash(git *)"]
-  }
-}
-```
-
-### Example 3: CI/CD with API Key
-
-```jsonc
-{
-    "name": "CI/CD Container",
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-    "features": {
-        "ghcr.io/<owner>/<repo>/claude-code:1": {
-            "version": "stable",
-            "useOAuthToken": true,
-            "autoUpdates": false,     // Disable auto-updates for CI consistency
-            "useSandbox": true
-        }
-    },
-    "remoteEnv": {
-        "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
     }
 }
 ```
 
-Set the API key in your CI environment variables or GitHub Codespaces secrets.
+After the container starts, run `claude` or use `/login` command in Claude Code to authenticate.
 
-## Security Considerations
+## Security considerations
 
-⚠️ **Important Security Notes**:
+⚠️ **Important security notes**:
 
-1. **Only use Claude Code in dev containers with trusted repositories** - A malicious project could access credentials mounted in the container
-2. **Never commit credentials** to source control - Use volumes or environment variables
+1. **Only use Claude Code in dev containers with trusted repositories** - A malicious project could access your credentials
+2. **Never commit credentials** to source control - Use environment variables or login directly
 3. **Use project-level config** (`.claude/settings.json`) for team settings, not credentials
-4. **Network isolation**: Consider Anthropic's firewall pattern for additional security ([see docs](https://docs.claude.com/en/docs/claude-code/devcontainer))
+4. **OAuth tokens**: If using `CLAUDE_CODE_OAUTH_TOKEN`, treat it like a password and store it securely
 
-## After Installation
+## After installation
 
 Once the container is built, you can use:
 
-### CLI Commands
+### CLI commands
 ```bash
 claude --version
 claude --help
 claude doctor
 ```
 
-### VS Code Extension
+### VS Code extension
 The Claude Code extension will be automatically installed and available in VS Code's sidebar.
 
 ## Troubleshooting
 
-### Authentication Issues
+### Authentication issues
 
 If `claude` reports authentication errors:
 
-1. **Volume mount**: Run `claude` to authenticate inside the container
-2. **Bind mount**: Authenticate on host first with `claude`
-3. **API key**: Verify `ANTHROPIC_API_KEY` is set: `echo $ANTHROPIC_API_KEY`
+1. **OAuth token**: Run `claude setup-token` on your host to get your token, then set `CLAUDE_CODE_OAUTH_TOKEN`
+2. **Direct login**: Run `claude` inside the container or use `/login` command in Claude Code
+3. **Verify token**: Check if `CLAUDE_CODE_OAUTH_TOKEN` is set: `echo $CLAUDE_CODE_OAUTH_TOKEN`
+4. **Different account**: Use `/logout` command in Claude Code, then use `/login` or run `claude setup-token` to get a new token
 
-### Permission Errors
-
-If you see permission errors accessing `.claude`:
-- Ensure the mount target matches the container user's home directory
-- Default is `/home/vscode/.claude` for the vscode user
-
-### VS Code Extension Not Loading
+### VS Code extension not loading
 
 If the extension doesn't appear:
 - Rebuild the container: Command Palette → "Dev Containers: Rebuild Container"
 - Check the extension is listed: Command Palette → "Extensions: Show Installed Extensions"
 
-## Additional Resources
+## Additional resources
 
 - [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code)
 - [Dev Container Specification](https://containers.dev/)
