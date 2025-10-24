@@ -40,7 +40,7 @@ This feature installs:
 {
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
             "version": "stable"
         }
     }
@@ -60,7 +60,7 @@ This feature installs:
 ```jsonc
 {
     "features": {
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
             "version": "stable",           // Version to install (stable/latest/2.0.25)
             "useOAuthToken": true,         // Skip onboarding, use OAuth (default: true)
             "autoUpdates": true,           // Enable automatic updates (default: true)
@@ -95,7 +95,7 @@ Use an OAuth token via environment variable:
 ```jsonc
 {
     "features": {
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
             "useOAuthToken": true
         }
     },
@@ -189,7 +189,7 @@ Add this to your `.gitignore`:
     "name": "Team Project",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
             "version": "stable",
             "useOAuthToken": true,
             "autoUpdates": true,
@@ -211,7 +211,7 @@ Run `claude setup-token` on your host to get the token, then set `CLAUDE_CODE_OA
     "name": "My Project",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
     "features": {
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
+        "ghcr.io/<owner>/<repo>/claude-code:1": {
             "version": "stable",
             "useOAuthToken": true,
             "autoUpdates": true,
@@ -222,45 +222,6 @@ Run `claude setup-token` on your host to get the token, then set `CLAUDE_CODE_OA
 ```
 
 After the container starts, run `claude` or use `/login` command in Claude Code to authenticate.
-
-### Example 3: Real-world Rails application
-
-```jsonc
-{
-    "name": "best_crm",
-    "dockerComposeFile": "compose.yaml",
-    "service": "rails-app",
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-    "features": {
-        "ghcr.io/devcontainers/features/github-cli:1": {},
-        "ghcr.io/rails/devcontainer/features/activestorage": {},
-        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-            "moby": false
-        },
-        "ghcr.io/rails/devcontainer/features/sqlite3": {},
-        "ghcr.io/chunlea/devcontainers-features/claude-code:1": {
-            "version": "stable",
-            "useOAuthToken": true,
-            "autoUpdates": true,
-            "useSandbox": true
-        }
-    },
-    "containerEnv": {
-        "CAPYBARA_SERVER_PORT": "45678",
-        "SELENIUM_HOST": "selenium",
-        "KAMAL_REGISTRY_PASSWORD": "$KAMAL_REGISTRY_PASSWORD",
-        "CLAUDE_CODE_OAUTH_TOKEN": "${localEnv:CLAUDE_CODE_OAUTH_TOKEN}"
-    },
-    "forwardPorts": [3000],
-    "postCreateCommand": "bin/setup --skip-server"
-}
-```
-
-This example shows:
-- Integration with Docker Compose for multi-container setup
-- Using `CLAUDE_CODE_OAUTH_TOKEN` environment variable for OAuth authentication
-- Combined with other devcontainer features (GitHub CLI, Rails features, Docker)
-- Production-like setup with custom ports and initialization scripts
 
 ## Security considerations
 
