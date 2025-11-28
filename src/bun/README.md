@@ -1,6 +1,7 @@
+
 # Bun (bun)
 
-Installs Bun - a fast JavaScript runtime, bundler, transpiler, and package manager.
+Installs Bun - a fast JavaScript runtime, bundler, transpiler, and package manager
 
 ## Example Usage
 
@@ -16,19 +17,8 @@ Installs Bun - a fast JavaScript runtime, bundler, transpiler, and package manag
 |-----|-----|-----|-----|
 | version | Select the version to install. Use 'latest' for the stable release, or specify a version number (e.g., '1.1.0'). | string | latest |
 
-## What is Bun?
 
-Bun is an all-in-one JavaScript runtime and toolkit designed for speed, featuring:
 
-- A fast JavaScript/TypeScript runtime
-- A bundler
-- A transpiler
-- A package manager (npm-compatible)
+---
 
-For more information, visit [bun.sh](https://bun.sh/).
-
-## Installation Notes
-
-This feature installs Bun using the official installation script from bun.sh. The `unzip` package is automatically installed as a dependency.
-
-The Bun binary is symlinked to `/usr/local/bin/bun` for easy access from anywhere in the container.
+_Note: This file was auto-generated from the [devcontainer-feature.json](https://github.com/chunlea/devcontainers-features/blob/main/src/bun/devcontainer-feature.json).  Add additional notes to a `NOTES.md`._
