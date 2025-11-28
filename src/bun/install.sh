@@ -50,19 +50,22 @@ INSTALL_USER_HOME=${_REMOTE_USER_HOME:-$HOME}
 
 echo "Installing for user: $INSTALL_USER (home: $INSTALL_USER_HOME)"
 
-# Build installation command based on version
+# Install Bun based on version, using direct command execution for security
 if [ "$VERSION" = "latest" ]; then
-    INSTALL_CMD="curl -fsSL https://bun.sh/install | bash"
+    if [ "$INSTALL_USER" != "root" ]; then
+        su - "$INSTALL_USER" -c "curl -fsSL https://bun.sh/install | bash"
+    else
+        curl -fsSL https://bun.sh/install | bash
+    fi
 else
-    # Install specific version (e.g., "1.1.0" -> "bun-v1.1.0")
-    INSTALL_CMD="curl -fsSL https://bun.sh/install | bash -s bun-v$VERSION"
-fi
-
-# Execute installation
-if [ "$INSTALL_USER" != "root" ]; then
-    su - "$INSTALL_USER" -c "$INSTALL_CMD"
-else
-    eval "$INSTALL_CMD"
+    # Install specific version (e.g., "1.1.0" or "v1.1.0" -> "bun-v1.1.0")
+    # Strip leading 'v' if present
+    CLEAN_VERSION="${VERSION#v}"
+    if [ "$INSTALL_USER" != "root" ]; then
+        su - "$INSTALL_USER" -c "curl -fsSL https://bun.sh/install | bash -s \"bun-v$CLEAN_VERSION\""
+    else
+        curl -fsSL https://bun.sh/install | bash -s "bun-v$CLEAN_VERSION"
+    fi
 fi
 
 # The installer places bun in ~/.bun/bin, which may not be in PATH yet
@@ -73,11 +76,16 @@ echo "Setting up bun command..."
 if [ -f "$INSTALL_USER_HOME/.bun/bin/bun" ]; then
     ln -sf "$INSTALL_USER_HOME/.bun/bin/bun" /usr/local/bin/bun
     echo "Created symlink: /usr/local/bin/bun -> $INSTALL_USER_HOME/.bun/bin/bun"
-    chmod +x "$INSTALL_USER_HOME/.bun/bin/bun"
 elif [ -f "/root/.bun/bin/bun" ]; then
     ln -sf "/root/.bun/bin/bun" /usr/local/bin/bun
     echo "Created symlink: /usr/local/bin/bun -> /root/.bun/bin/bun"
-    chmod +x "/root/.bun/bin/bun"
+else
+    # Attempt to locate bun binary elsewhere
+    BUN_PATH="$(command -v bun 2>/dev/null || find "$INSTALL_USER_HOME" -type f -name bun -path '*/.bun/bin/bun' 2>/dev/null | head -n 1)"
+    if [ -n "$BUN_PATH" ] && [ -f "$BUN_PATH" ]; then
+        ln -sf "$BUN_PATH" /usr/local/bin/bun
+        echo "Created symlink: /usr/local/bin/bun -> $BUN_PATH"
+    fi
 fi
 
 # Verify installation
@@ -86,7 +94,7 @@ if command -v bun >/dev/null 2>&1; then
     echo "Bun installed successfully!"
     bun --version || true
 else
-    echo "Warning: bun command not found in PATH. Installation may have failed."
+    echo "Error: bun command not found in PATH. Installation may have failed."
     exit 1
 fi
 
