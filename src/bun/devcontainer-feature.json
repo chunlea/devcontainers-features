@@ -1,0 +1,15 @@
+{
+  "name": "Bun",
+  "id": "bun",
+  "version": "1.0.0",
+  "description": "Installs Bun - a fast JavaScript runtime, bundler, transpiler, and package manager",
+  "options": {
+    "version": {
+      "type": "string",
+      "proposals": ["latest"],
+      "default": "latest",
+      "description": "Select the version to install. Use 'latest' for the stable release, or specify a version number (e.g., '1.1.0')."
+    }
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
+}
