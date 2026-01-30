@@ -25,6 +25,46 @@ echo "The effective dev container remoteUser's home directory is '$_REMOTE_USER_
 echo "The effective dev container containerUser is '$_CONTAINER_USER'"
 echo "The effective dev container containerUser's home directory is '$_CONTAINER_USER_HOME'"
 
+# Detect architecture
+ARCH=$(uname -m)
+case "$ARCH" in
+    x86_64)
+        ARCH_NAME="x64"
+        ;;
+    aarch64|arm64)
+        ARCH_NAME="arm64"
+        ;;
+    *)
+        echo "Warning: Architecture '$ARCH' may not be fully supported by Claude Code"
+        ARCH_NAME="$ARCH"
+        ;;
+esac
+echo "Detected architecture: $ARCH ($ARCH_NAME)"
+
+# Helper function to retry commands with exponential backoff
+retry_with_backoff() {
+    local max_attempts=4
+    local timeout=2
+    local attempt=1
+    local exitCode=0
+
+    while [ $attempt -le $max_attempts ]; do
+        if "$@"; then
+            return 0
+        else
+            exitCode=$?
+        fi
+
+        echo "Attempt $attempt failed. Retrying in ${timeout}s..."
+        sleep $timeout
+        attempt=$((attempt + 1))
+        timeout=$((timeout * 2))
+    done
+
+    echo "Command failed after $max_attempts attempts"
+    return $exitCode
+}
+
 # Install required dependencies
 echo "Installing required dependencies..."
 
@@ -71,27 +111,37 @@ INSTALL_USER_HOME=${_REMOTE_USER_HOME:-$HOME}
 
 echo "Installing for user: $INSTALL_USER (home: $INSTALL_USER_HOME)"
 
+# Helper function to run the installer
+run_installer() {
+    local version_arg="$1"
+    local install_cmd="curl -fsSL https://claude.ai/install.sh | bash"
+
+    if [ -n "$version_arg" ]; then
+        install_cmd="curl -fsSL https://claude.ai/install.sh | bash -s $version_arg"
+    fi
+
+    if [ "$INSTALL_USER" != "root" ]; then
+        su - "$INSTALL_USER" -c "$install_cmd"
+    else
+        eval "$install_cmd"
+    fi
+}
+
+# Determine version argument
+VERSION_ARG=""
 if [ "$VERSION" = "stable" ]; then
-    # Install stable version (default)
-    if [ "$INSTALL_USER" != "root" ]; then
-        su - "$INSTALL_USER" -c "curl -fsSL https://claude.ai/install.sh | bash"
-    else
-        curl -fsSL https://claude.ai/install.sh | bash
-    fi
+    VERSION_ARG=""
 elif [ "$VERSION" = "latest" ]; then
-    # Install latest version
-    if [ "$INSTALL_USER" != "root" ]; then
-        su - "$INSTALL_USER" -c "curl -fsSL https://claude.ai/install.sh | bash -s latest"
-    else
-        curl -fsSL https://claude.ai/install.sh | bash -s latest
-    fi
+    VERSION_ARG="latest"
 else
-    # Install specific version
-    if [ "$INSTALL_USER" != "root" ]; then
-        su - "$INSTALL_USER" -c "curl -fsSL https://claude.ai/install.sh | bash -s $VERSION"
-    else
-        curl -fsSL https://claude.ai/install.sh | bash -s "$VERSION"
-    fi
+    VERSION_ARG="$VERSION"
+fi
+
+# Run installer with retry logic
+echo "Running Claude Code installer (with retry on network failure)..."
+if ! retry_with_backoff run_installer "$VERSION_ARG"; then
+    echo "Error: Failed to install Claude Code after multiple attempts"
+    exit 1
 fi
 
 # The installer places claude in ~/.local/bin, which may not be in PATH yet
