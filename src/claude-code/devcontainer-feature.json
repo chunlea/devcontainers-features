@@ -30,15 +30,31 @@
       "default": true,
       "description": "Install bubblewrap for sandbox support. Required for bash command sandboxing on Linux."
     },
-    "bypassPermissions": {
-      "type": "boolean",
-      "default": true,
-      "description": "Enable bypass permissions mode by default in devcontainer environments for seamless operation."
+    "defaultPermissionMode": {
+      "type": "string",
+      "enum": ["acceptEdits", "askEachEdit", "bypassPermissions"],
+      "default": "bypassPermissions",
+      "description": "Default permission mode for devcontainer. Use 'bypassPermissions' for seamless operation (devcontainer safe), 'acceptEdits' for auto-approve edits, or 'askEachEdit' for manual review."
     },
     "enableTeamMode": {
       "type": "boolean",
       "default": true,
-      "description": "Enable team mode by default for collaborative development workflows."
+      "description": "Enable experimental agent teams feature for collaborative multi-agent workflows."
+    },
+    "model": {
+      "type": "string",
+      "default": "",
+      "description": "Default Claude model to use (e.g., 'claude-sonnet-4-5-20250929', 'claude-opus-4-6'). Leave empty to use Claude Code defaults."
+    },
+    "apiBaseUrl": {
+      "type": "string",
+      "default": "",
+      "description": "Custom API base URL via ANTHROPIC_BASE_URL env var (e.g., 'http://localhost:8082'). Leave empty to use default Anthropic API."
+    },
+    "customEnv": {
+      "type": "string",
+      "default": "{}",
+      "description": "Custom environment variables in JSON format (e.g., '{\"KEY\":\"value\"}'). These will be merged into the env section of settings.json."
     }
   },
   "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]

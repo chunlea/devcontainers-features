@@ -7,15 +7,20 @@ VERSION=${VERSION:-stable}
 USEOAUTHTOKEN=${USEOAUTHTOKEN:-true}
 AUTOUPDATES=${AUTOUPDATES:-true}
 USESANDBOX=${USESANDBOX:-true}
-BYPASSPERMISSIONS=${BYPASSPERMISSIONS:-true}
+DEFAULTPERMISSIONMODE=${DEFAULTPERMISSIONMODE:-bypassPermissions}
 ENABLETEAMMODE=${ENABLETEAMMODE:-true}
+MODEL=${MODEL:-""}
+APIBASEURL=${APIBASEURL:-""}
+CUSTOMENV=${CUSTOMENV:-"{}"}
 
 echo "Installing Claude Code version: $VERSION"
 echo "Use OAuth Token: $USEOAUTHTOKEN"
 echo "Auto Updates: $AUTOUPDATES"
 echo "Use Sandbox: $USESANDBOX"
-echo "Bypass Permissions: $BYPASSPERMISSIONS"
+echo "Default Permission Mode: $DEFAULTPERMISSIONMODE"
 echo "Enable Team Mode: $ENABLETEAMMODE"
+[ -n "$MODEL" ] && echo "Default Model: $MODEL"
+[ -n "$APIBASEURL" ] && echo "API Base URL: $APIBASEURL"
 
 # The 'install.sh' entrypoint script is always executed as the root user.
 #
@@ -161,55 +166,111 @@ else
     exit 1
 fi
 
-# Configure Claude Code settings
-echo "Configuring Claude Code settings..."
-CLAUDE_CONFIG_FILE="$INSTALL_USER_HOME/.claude.json"
+# Configure user-level authentication settings (~/.claude.json)
+echo "Configuring Claude Code authentication..."
+USER_CONFIG_FILE="$INSTALL_USER_HOME/.claude.json"
 
 # Prepare the values for jq
 HAS_COMPLETED_ONBOARDING=$([ "$USEOAUTHTOKEN" = "true" ] && echo "true" || echo "false")
 AUTO_UPDATES=$([ "$AUTOUPDATES" = "true" ] && echo "true" || echo "false")
-BYPASS_PERMISSIONS=$([ "$BYPASSPERMISSIONS" = "true" ] && echo "true" || echo "false")
-ENABLE_TEAM_MODE=$([ "$ENABLETEAMMODE" = "true" ] && echo "true" || echo "false")
 
-# Create or update .claude.json
-if [ -f "$CLAUDE_CONFIG_FILE" ]; then
-    echo "Claude config file exists at $CLAUDE_CONFIG_FILE, merging settings..."
-    # Backup existing config
-    cp "$CLAUDE_CONFIG_FILE" "$CLAUDE_CONFIG_FILE.backup"
-    echo "Backup created at $CLAUDE_CONFIG_FILE.backup"
-
-    # Merge the new settings with existing config using jq
+# Create or update ~/.claude.json for authentication
+if [ -f "$USER_CONFIG_FILE" ]; then
+    echo "User config exists at $USER_CONFIG_FILE, merging authentication settings..."
+    cp "$USER_CONFIG_FILE" "$USER_CONFIG_FILE.backup"
     TEMP_FILE=$(mktemp)
     jq --argjson hasCompleted "$HAS_COMPLETED_ONBOARDING" \
        --argjson autoUpdates "$AUTO_UPDATES" \
-       --argjson bypassPermissions "$BYPASS_PERMISSIONS" \
-       --argjson enableTeamMode "$ENABLE_TEAM_MODE" \
-       '. + {hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates, bypassPermissions: $bypassPermissions, enableTeamMode: $enableTeamMode}' \
-       "$CLAUDE_CONFIG_FILE" > "$TEMP_FILE"
-
-    mv "$TEMP_FILE" "$CLAUDE_CONFIG_FILE"
-    echo "Settings merged successfully, preserving existing configuration"
+       '. + {hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates}' \
+       "$USER_CONFIG_FILE" > "$TEMP_FILE"
+    mv "$TEMP_FILE" "$USER_CONFIG_FILE"
 else
-    echo "Creating new Claude config file at $CLAUDE_CONFIG_FILE..."
-    # Create new config file with all settings
     jq -n --argjson hasCompleted "$HAS_COMPLETED_ONBOARDING" \
           --argjson autoUpdates "$AUTO_UPDATES" \
-          --argjson bypassPermissions "$BYPASS_PERMISSIONS" \
-          --argjson enableTeamMode "$ENABLE_TEAM_MODE" \
-          '{hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates, bypassPermissions: $bypassPermissions, enableTeamMode: $enableTeamMode}' \
-          > "$CLAUDE_CONFIG_FILE"
+          '{hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates}' \
+          > "$USER_CONFIG_FILE"
 fi
 
-# Set ownership to the install user
+# Set ownership
 if [ "$INSTALL_USER" != "root" ]; then
-    chown "$INSTALL_USER:$INSTALL_USER" "$CLAUDE_CONFIG_FILE"
-    [ -f "$CLAUDE_CONFIG_FILE.backup" ] && chown "$INSTALL_USER:$INSTALL_USER" "$CLAUDE_CONFIG_FILE.backup"
+    chown "$INSTALL_USER:$INSTALL_USER" "$USER_CONFIG_FILE"
+    [ -f "$USER_CONFIG_FILE.backup" ] && chown "$INSTALL_USER:$INSTALL_USER" "$USER_CONFIG_FILE.backup"
 fi
 
-echo "Settings configured in $CLAUDE_CONFIG_FILE:"
-echo "  hasCompletedOnboarding: $HAS_COMPLETED_ONBOARDING"
-echo "  autoUpdates: $AUTO_UPDATES"
-echo "  bypassPermissions: $BYPASS_PERMISSIONS"
-echo "  enableTeamMode: $ENABLE_TEAM_MODE"
+echo "Authentication configured in $USER_CONFIG_FILE"
+
+# Configure user-level settings (~/.claude/settings.json)
+echo "Configuring Claude Code user settings..."
+SETTINGS_DIR="$INSTALL_USER_HOME/.claude"
+SETTINGS_FILE="$SETTINGS_DIR/settings.json"
+
+# Create settings directory if it doesn't exist
+if [ ! -d "$SETTINGS_DIR" ]; then
+    mkdir -p "$SETTINGS_DIR"
+    if [ "$INSTALL_USER" != "root" ]; then
+        chown "$INSTALL_USER:$INSTALL_USER" "$SETTINGS_DIR"
+    fi
+fi
+
+# Build the settings JSON structure
+echo "Building settings configuration..."
+
+# Start with base settings object
+SETTINGS_JSON='{}'
+
+# Add permission mode configuration
+SETTINGS_JSON=$(echo "$SETTINGS_JSON" | jq --arg mode "$DEFAULTPERMISSIONMODE" \
+    '. + {permissions: {defaultMode: $mode}}')
+
+# Add model if specified
+if [ -n "$MODEL" ]; then
+    SETTINGS_JSON=$(echo "$SETTINGS_JSON" | jq --arg model "$MODEL" '. + {model: $model}')
+fi
+
+# Build environment variables object
+ENV_JSON='{}'
+
+# Add team mode if enabled
+if [ "$ENABLETEAMMODE" = "true" ]; then
+    ENV_JSON=$(echo "$ENV_JSON" | jq '. + {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}')
+fi
+
+# Add API base URL if specified
+if [ -n "$APIBASEURL" ]; then
+    ENV_JSON=$(echo "$ENV_JSON" | jq --arg apiBase "$APIBASEURL" '. + {"ANTHROPIC_BASE_URL": $apiBase}')
+fi
+
+# Parse and merge custom environment variables if provided
+if [ -n "$CUSTOMENV" ] && [ "$CUSTOMENV" != "{}" ]; then
+    if echo "$CUSTOMENV" | jq empty 2>/dev/null; then
+        ENV_JSON=$(echo "$ENV_JSON" | jq --argjson custom "$CUSTOMENV" '. + $custom')
+    else
+        echo "Warning: Invalid JSON format for customEnv. Skipping custom environment variables."
+    fi
+fi
+
+# Add env object if it has any keys
+if [ "$(echo "$ENV_JSON" | jq 'keys | length')" -gt 0 ]; then
+    SETTINGS_JSON=$(echo "$SETTINGS_JSON" | jq --argjson env "$ENV_JSON" '. + {env: $env}')
+fi
+
+# Create or update settings.json
+if [ -f "$SETTINGS_FILE" ]; then
+    echo "Settings file exists at $SETTINGS_FILE, merging..."
+    cp "$SETTINGS_FILE" "$SETTINGS_FILE.backup"
+    TEMP_FILE=$(mktemp)
+    jq --argjson new "$SETTINGS_JSON" '. * $new' "$SETTINGS_FILE" > "$TEMP_FILE"
+    mv "$TEMP_FILE" "$SETTINGS_FILE"
+else
+    echo "$SETTINGS_JSON" | jq '.' > "$SETTINGS_FILE"
+fi
+
+# Set ownership
+if [ "$INSTALL_USER" != "root" ]; then
+    chown -R "$INSTALL_USER:$INSTALL_USER" "$SETTINGS_DIR"
+fi
+
+echo "Settings configured in $SETTINGS_FILE:"
+echo "$SETTINGS_JSON" | jq '.'
 
 echo "Claude Code feature activation complete!"
