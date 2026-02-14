@@ -199,23 +199,16 @@ fi
 
 echo "Authentication configured in $USER_CONFIG_FILE"
 
-# Configure user-level settings (~/.claude/settings.json)
-echo "Configuring Claude Code user settings..."
-SETTINGS_DIR="$INSTALL_USER_HOME/.claude"
-SETTINGS_FILE="$SETTINGS_DIR/settings.json"
+# Configure managed settings (/etc/claude-code/managed-settings.json)
+# Managed settings have the highest priority and won't be overwritten by Claude Code.
+echo "Configuring Claude Code managed settings..."
+MANAGED_SETTINGS_DIR="/etc/claude-code"
+MANAGED_SETTINGS_FILE="$MANAGED_SETTINGS_DIR/managed-settings.json"
 
-# Create settings directory if it doesn't exist
-if [ ! -d "$SETTINGS_DIR" ]; then
-    mkdir -p "$SETTINGS_DIR"
-    if [ "$INSTALL_USER" != "root" ]; then
-        chown "$INSTALL_USER:$INSTALL_USER" "$SETTINGS_DIR"
-    fi
-fi
+mkdir -p "$MANAGED_SETTINGS_DIR"
 
 # Build the settings JSON structure
 echo "Building settings configuration..."
-
-# Start with base settings object
 SETTINGS_JSON='{}'
 
 # Add permission mode configuration
@@ -254,23 +247,17 @@ if [ "$(echo "$ENV_JSON" | jq 'keys | length')" -gt 0 ]; then
     SETTINGS_JSON=$(echo "$SETTINGS_JSON" | jq --argjson env "$ENV_JSON" '. + {env: $env}')
 fi
 
-# Create or update settings.json
-if [ -f "$SETTINGS_FILE" ]; then
-    echo "Settings file exists at $SETTINGS_FILE, merging..."
-    cp "$SETTINGS_FILE" "$SETTINGS_FILE.backup"
+# Write managed settings (create or merge)
+if [ -f "$MANAGED_SETTINGS_FILE" ]; then
+    echo "Managed settings file exists, merging..."
     TEMP_FILE=$(mktemp)
-    jq --argjson new "$SETTINGS_JSON" '. * $new' "$SETTINGS_FILE" > "$TEMP_FILE"
-    mv "$TEMP_FILE" "$SETTINGS_FILE"
+    jq --argjson new "$SETTINGS_JSON" '. * $new' "$MANAGED_SETTINGS_FILE" > "$TEMP_FILE"
+    mv "$TEMP_FILE" "$MANAGED_SETTINGS_FILE"
 else
-    echo "$SETTINGS_JSON" | jq '.' > "$SETTINGS_FILE"
+    echo "$SETTINGS_JSON" | jq '.' > "$MANAGED_SETTINGS_FILE"
 fi
 
-# Set ownership
-if [ "$INSTALL_USER" != "root" ]; then
-    chown -R "$INSTALL_USER:$INSTALL_USER" "$SETTINGS_DIR"
-fi
-
-echo "Settings configured in $SETTINGS_FILE:"
-echo "$SETTINGS_JSON" | jq '.'
+echo "Managed settings configured in $MANAGED_SETTINGS_FILE:"
+cat "$MANAGED_SETTINGS_FILE"
 
 echo "Claude Code feature activation complete!"
