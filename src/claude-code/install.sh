@@ -7,11 +7,15 @@ VERSION=${VERSION:-stable}
 USEOAUTHTOKEN=${USEOAUTHTOKEN:-true}
 AUTOUPDATES=${AUTOUPDATES:-true}
 USESANDBOX=${USESANDBOX:-true}
+BYPASSPERMISSIONS=${BYPASSPERMISSIONS:-true}
+ENABLETEAMMODE=${ENABLETEAMMODE:-true}
 
 echo "Installing Claude Code version: $VERSION"
 echo "Use OAuth Token: $USEOAUTHTOKEN"
 echo "Auto Updates: $AUTOUPDATES"
 echo "Use Sandbox: $USESANDBOX"
+echo "Bypass Permissions: $BYPASSPERMISSIONS"
+echo "Enable Team Mode: $ENABLETEAMMODE"
 
 # The 'install.sh' entrypoint script is always executed as the root user.
 #
@@ -164,6 +168,8 @@ CLAUDE_CONFIG_FILE="$INSTALL_USER_HOME/.claude.json"
 # Prepare the values for jq
 HAS_COMPLETED_ONBOARDING=$([ "$USEOAUTHTOKEN" = "true" ] && echo "true" || echo "false")
 AUTO_UPDATES=$([ "$AUTOUPDATES" = "true" ] && echo "true" || echo "false")
+BYPASS_PERMISSIONS=$([ "$BYPASSPERMISSIONS" = "true" ] && echo "true" || echo "false")
+ENABLE_TEAM_MODE=$([ "$ENABLETEAMMODE" = "true" ] && echo "true" || echo "false")
 
 # Create or update .claude.json
 if [ -f "$CLAUDE_CONFIG_FILE" ]; then
@@ -176,17 +182,21 @@ if [ -f "$CLAUDE_CONFIG_FILE" ]; then
     TEMP_FILE=$(mktemp)
     jq --argjson hasCompleted "$HAS_COMPLETED_ONBOARDING" \
        --argjson autoUpdates "$AUTO_UPDATES" \
-       '. + {hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates}' \
+       --argjson bypassPermissions "$BYPASS_PERMISSIONS" \
+       --argjson enableTeamMode "$ENABLE_TEAM_MODE" \
+       '. + {hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates, bypassPermissions: $bypassPermissions, enableTeamMode: $enableTeamMode}' \
        "$CLAUDE_CONFIG_FILE" > "$TEMP_FILE"
 
     mv "$TEMP_FILE" "$CLAUDE_CONFIG_FILE"
     echo "Settings merged successfully, preserving existing configuration"
 else
     echo "Creating new Claude config file at $CLAUDE_CONFIG_FILE..."
-    # Create new config file with just our settings
+    # Create new config file with all settings
     jq -n --argjson hasCompleted "$HAS_COMPLETED_ONBOARDING" \
           --argjson autoUpdates "$AUTO_UPDATES" \
-          '{hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates}' \
+          --argjson bypassPermissions "$BYPASS_PERMISSIONS" \
+          --argjson enableTeamMode "$ENABLE_TEAM_MODE" \
+          '{hasCompletedOnboarding: $hasCompleted, autoUpdates: $autoUpdates, bypassPermissions: $bypassPermissions, enableTeamMode: $enableTeamMode}' \
           > "$CLAUDE_CONFIG_FILE"
 fi
 
@@ -199,5 +209,7 @@ fi
 echo "Settings configured in $CLAUDE_CONFIG_FILE:"
 echo "  hasCompletedOnboarding: $HAS_COMPLETED_ONBOARDING"
 echo "  autoUpdates: $AUTO_UPDATES"
+echo "  bypassPermissions: $BYPASS_PERMISSIONS"
+echo "  enableTeamMode: $ENABLE_TEAM_MODE"
 
 echo "Claude Code feature activation complete!"

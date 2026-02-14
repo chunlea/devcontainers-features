@@ -29,6 +29,16 @@
       "type": "boolean",
       "default": true,
       "description": "Install bubblewrap for sandbox support. Required for bash command sandboxing on Linux."
+    },
+    "bypassPermissions": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable bypass permissions mode by default in devcontainer environments for seamless operation."
+    },
+    "enableTeamMode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable team mode by default for collaborative development workflows."
     }
   },
   "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
