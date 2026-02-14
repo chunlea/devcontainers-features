@@ -1,0 +1,25 @@
+src/claude-code/install.sh
+  b99205e606ef6da4 10-11,17-18,171-172,185-187,194,197-199,212-213
+src/claude-code/devcontainer-feature.json
+  b99205e606ef6da4 32-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "ca90396aa3b0db81cdf2ce2500a7503826c36985",
+  "prompts": {
+    "b99205e606ef6da4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ebe8047-d19b-4808-8ff3-0579db82c540",
+        "model": "claude-sonnet-4-5-20250929"
+      },
+      "human_author": "chunli <git@chunli.dev>",
+      "messages": [],
+      "total_additions": 25,
+      "total_deletions": 3,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    }
+  }
+}
