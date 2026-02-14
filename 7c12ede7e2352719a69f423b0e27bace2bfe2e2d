@@ -1,0 +1,25 @@
+src/bun/install.sh
+  b99205e606ef6da4 7-8,11-12,18,26,29,32-33,56-57,59-61,63-83,85,88-89,91,95,98-103,105-109,112-116,122,124,128-176
+src/bun/devcontainer-feature.json
+  b99205e606ef6da4 4,9,11-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.3",
+  "base_commit_sha": "7c12ede7e2352719a69f423b0e27bace2bfe2e2d",
+  "prompts": {
+    "b99205e606ef6da4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ebe8047-d19b-4808-8ff3-0579db82c540",
+        "model": "claude-sonnet-4-5-20250929"
+      },
+      "human_author": "chunli <git@chunli.dev>",
+      "messages": [],
+      "total_additions": 124,
+      "total_deletions": 36,
+      "accepted_lines": 123,
+      "overriden_lines": 0
+    }
+  }
+}
