@@ -19,6 +19,11 @@ Installs Claude Code CLI using native binary installation
 | useOAuthToken | If true, marks hasCompletedOnboarding as true to use OAuth token authentication. | boolean | true |
 | autoUpdates | Enable automatic updates for Claude Code. | boolean | true |
 | useSandbox | Install bubblewrap for sandbox support. Required for bash command sandboxing on Linux. | boolean | true |
+| defaultPermissionMode | Default permission mode for devcontainer. Use 'bypassPermissions' for seamless operation (devcontainer safe), 'acceptEdits' for auto-approve edits, or 'askEachEdit' for manual review. | string | bypassPermissions |
+| enableTeamMode | Enable experimental agent teams feature for collaborative multi-agent workflows. | boolean | true |
+| model | Default Claude model to use (e.g., 'claude-sonnet-4-5-20250929', 'claude-opus-4-6'). Leave empty to use Claude Code defaults. | string | - |
+| apiBaseUrl | Custom API base URL via ANTHROPIC_BASE_URL env var (e.g., 'http://localhost:8082'). Leave empty to use default Anthropic API. | string | - |
+| customEnv | Custom environment variables in JSON format (e.g., '{"KEY":"value"}'). These will be merged into the env section of settings.json. | string | {} |
 
 ## Customizations
 
