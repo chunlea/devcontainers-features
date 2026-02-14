@@ -1,14 +1,24 @@
 {
   "name": "Bun",
   "id": "bun",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Installs Bun - a fast JavaScript runtime, bundler, transpiler, and package manager",
   "options": {
     "version": {
       "type": "string",
-      "proposals": ["latest"],
+      "proposals": ["latest", "canary"],
       "default": "latest",
-      "description": "Select the version to install. Use 'latest' for the stable release, or specify a version number (e.g., '1.1.0')."
+      "description": "Select the version to install. Use 'latest' for stable release, 'canary' for pre-release features, or specify a version number (e.g., '1.1.0')."
+    },
+    "useBaseline": {
+      "type": "boolean",
+      "default": false,
+      "description": "Install baseline build for older CPUs (Nehalem/Bulldozer) instead of default Haswell build. Use if you encounter 'Illegal Instruction' errors."
+    },
+    "configurePath": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically configure PATH in shell profiles (.bashrc, .zshrc). Recommended for non-root users."
     }
   },
   "installsAfter": ["ghcr.io/devcontainers/features/common-utils"]
